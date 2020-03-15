@@ -1,5 +1,6 @@
 *.npy
 __pycache__/
+.idea/
 
 .env
 .venv
@@ -8,3 +9,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+simulations/
+statistics/
+parameter_estimates/
+posteriors/

@@ -84,7 +84,7 @@ def sampling(prior, likelihood, sample_size, repeats):
     for theta in thetas:
         y = likelihood(theta, sample_size)
         simulations.append((theta, y))
-    return simulations
+    return np.array(simulations)
 
 
 # Distributions for sampling
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     for i in range(1, Batch_num + 1):
         start_i = time.process_time()
         simulations = sampling(scaled_inversed_chi_square, normal, N, 10000)
-        np.save('simulations_' + str(i) + '.npy', simulations, allow_pickle=True)
+        np.save('simulations/simulations_' + str(i) + '.npy', simulations, allow_pickle=True)
         dur_i = time.process_time() - start_i
         print('Batch ' + str(i) + ' completed in ' + str(dur_i))
     dur = time.process_time() - start
