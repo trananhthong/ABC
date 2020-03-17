@@ -31,7 +31,7 @@ def sampling(sample_mean, sample_size, repeats):
 # Distributions for sampling
 
 def scaled_inversed_chi_square(repeats):
-    return invgamma.rvs(500, scale = 500, size = repeats)
+    return invgamma.rvs(N/2, scale = N/2*S_SQ_0, size = repeats)
 
 def normal(mean, var, repeats):
     return norm.rvs(M_0, np.sqrt(var), size = repeats)
@@ -47,6 +47,6 @@ if __name__ == "__main__":
         np.save('simulations/simulations_' + str(i) + '.npy', simulations, allow_pickle=True)
         dur_i = time.process_time() - start_i
         print('Batch ' + str(i) + ' completed in ' + str(dur_i))
-        
+
     dur = time.process_time() - start
     print('Simulation time: ' + str(dur))

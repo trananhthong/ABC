@@ -9,7 +9,7 @@ from constants import M_0, S_SQ_0, N
 # Generate data
 
 def generate_data(M_0, S_SQ_0, N):
-    data = norm.rvs(M_0, S_SQ_0, N)
+    data = norm.rvs(M_0, np.sqrt(S_SQ_0), N)
 
     return data
 
