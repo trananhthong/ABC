@@ -67,12 +67,12 @@ def ABC():
                 if triangle_kernel(distance, h) >= np.random.rand():
                     posterior.append((mean, variance))
 
-            print(len(posterior))
 
             np.save('ABC_posteriors/' + statistics_set + '_' + k + '_posterior.npy', np.array(posterior), allow_pickle = True)
 
             dur_i = time.process_time() - start_i
             print(statistics_set + ' ' + k + ' distance and posterior calculation completed in ' + str(dur_i))
+            print('Accepted: ' + str(len(posterior)/10000) + '%')
 
 
 
