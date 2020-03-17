@@ -13,4 +13,5 @@ venv.bak/
 simulations/
 statistics/
 parameter_estimates/
-posteriors/
+distances/
+ABC_posteriors/
