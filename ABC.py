@@ -51,7 +51,7 @@ def mahalanobis_d(S, s_obs):
 def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
     for i in range(runs):
         print('RUN ' + str(i + 1) + '\n')
-        start = time.process_time()
+        start = time.time()
         print('\nGenerating data and true posterior...')
         data_generator_run()
         print('\nGenerating simulation...')
@@ -141,7 +141,7 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 print('Wasserstein distance to true posterior: ' + str(w_d))
                 print('Accepted: ' + str(len(posterior)/(Batch_num * Sim_per_batch / 100)) + '%')
 
-        dur = time.process_time() - start
+        dur = time.time() - start
         print('\nRun ' + str(i+1) + ' completed in: ' + str(dur) + '\n\n\n')
 
 
@@ -163,10 +163,10 @@ if __name__ == '__main__':
 
 
 
-    start1 = time.process_time()
+    start1 = time.time()
     ABC(distance_results, acceptance_rate_results, Cut_off, Run_num)
     np.save('wasserstein_distance_results.npy', distance_results, allow_pickle = True)
     np.save('acceptance_rate_results.npy', acceptance_rate_results, allow_pickle = True)
-    dur1 = time.process_time() - start1
+    dur1 = time.time() - start1
     print('All ' + str(Run_num) + ' ABC run completed in: ' + str(dur1))
 

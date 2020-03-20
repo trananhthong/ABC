@@ -23,7 +23,7 @@ def parameter_estimate(theta_statistics, data_statistics):
 
 
 def parameter_regression_run():
-	start = time.process_time()
+	start = time.time()
 
 	statistics_sets = ['mean_variance', 'quantiles', 'min_max', 'mixed']
 
@@ -37,5 +37,5 @@ def parameter_regression_run():
 		dur_i = time.process_time() - start_i
 		print(statistics_set + ' parameter estimation completed in: ' + str(dur_i))
 
-	dur = time.process_time() - start
+	dur = time.time() - start
 	print('Parameter estimation time: ' + str(dur))
