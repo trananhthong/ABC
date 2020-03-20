@@ -22,7 +22,7 @@ def parameter_estimate(theta_statistics, data_statistics):
 	return sample_estimates, data_estimate
 
 
-if __name__ == "__main__":
+def parameter_regression_run():
 	start = time.process_time()
 
 	statistics_sets = ['mean_variance', 'quantiles', 'min_max', 'mixed']

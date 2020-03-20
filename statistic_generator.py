@@ -50,18 +50,19 @@ def mixed(data):
 
 
 
-if __name__ == '__main__':
+def statistic_generator_run():
     start = time.process_time()
     data = np.load('data.npy', allow_pickle = True)
     choices = {'mean_variance': mean_variance, 'quantiles': quantiles, 'min_max': min_max, 'mixed': mixed}
 
     for k,f in choices.items():
         start_i = time.process_time()
+        print('Starting ' + k + ' computation...')
         stats = summary_statistics(f)
         np.save('statistics/'+ k + '.npy', stats, allow_pickle=True)
         np.save('statistics/data_' + k + '.npy', f(data), allow_pickle=True)
         dur_i = time.process_time() - start_i
-        print(k + ' process completed in: ' + str(dur_i))
+        print(k + ' computation completed in: ' + str(dur_i) + '\n')
 
     dur = time.process_time() - start
-    print('All completed in: ' + str(dur))
+    print('Statistics generating time: ' + str(dur))

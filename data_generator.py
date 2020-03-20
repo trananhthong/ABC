@@ -35,13 +35,13 @@ def true_posterior(data, m_0, s_sq_0, v_0, k_0, n):
     return alpha, beta, m_n, k_n, x, y
 
 
-if __name__ == "__main__":
+def data_generator_run():
     data = generate_data(M_0, S_SQ_0, N)
     np.save('data.npy', data, allow_pickle=True)
 
     alpha, beta, m, k, x, y = true_posterior(data, M_0 * 1.1, S_SQ_0 * 1.5, 1, 1, 10000)
     posterior_var = invgamma.rvs(alpha, scale = beta, size = 10000)
-    posterior_mean = np.array([norm.rvs(m, scale = np.sqrt(var/N), size = 1)[0] for var in posterior_var])
+    posterior_mean = np.array([norm.rvs(m, scale = np.sqrt(var/k), size = 1)[0] for var in posterior_var])
     true_posterior_sample = np.dstack((posterior_mean, posterior_var))[0]
     np.save('true_posterior_sample.npy', true_posterior_sample, allow_pickle=True)
     true_posterior_var_pdf = np.dstack((x,y))[0]
