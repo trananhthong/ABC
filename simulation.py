@@ -35,7 +35,7 @@ def sampling(args):
 # Distributions for sampling
 
 def scaled_inversed_chi_square(repeats):
-    return invgamma.rvs(4, scale = 8, size = repeats)
+    return invgamma.rvs(8, scale = 4, size = repeats)
 
 def normal(mean, var, repeats):
     return norm.rvs(M_0, np.sqrt(var), size = repeats)
@@ -47,14 +47,8 @@ def simulation_run():
 
     batches_args = [(mean_data, N, Sim_per_batch, i) for i in np.arange(1, Batch_num + 1)]
 
-    agents = 4
-    chunk_size = 10
-
     with Pool(processes=agents) as pool:
         pool.map(sampling, batches_args, chunk_size)
-
-    #for i in range(1, Batch_num + 1):
-    #    np.save('simulations/simulations_' + str(i) + '.npy', results[i-1], allow_pickle=True)
 
     dur = time.time() - start
     print('Simulation time: ' + str(dur))
