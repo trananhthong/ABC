@@ -4,7 +4,7 @@ from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import matplotlib.pyplot as plt
 import time
 from multiprocessing import Pool
-from constants import M_0, S_SQ_0, N, Sim_per_batch, Batch_num, agents, chunk_size, Alpha, Beta
+from constants import M_0, S_SQ_0, N, Batch_size, Batch_num, agents, chunk_size, Alpha, Beta
 
 
 # Prior s^2 ~ Scaled-Inv-Chi-sqr(v,s^2)
@@ -46,7 +46,7 @@ def simulation_run():
     mean_data = np.mean(data)
     del data
 
-    batches_args = [(mean_data, N, Sim_per_batch, i) for i in np.arange(1, Batch_num + 1)]
+    batches_args = [(mean_data, N, Batch_size, i) for i in np.arange(1, Batch_num + 1)]
 
     with Pool(processes=agents) as pool:
         pool.map(sampling, batches_args, chunk_size)

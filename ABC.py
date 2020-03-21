@@ -4,7 +4,7 @@ from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import matplotlib.pyplot as plt
 import time
 from multiprocessing import Pool
-from constants import M_0, S_SQ_0, N, Sim_per_batch, Batch_num, Run_num, Cut_off, agents, chunk_size
+from constants import M_0, S_SQ_0, N, Batch_size, Batch_num, Run_num, Cut_off, distance_agents, distance_chunk_size
 from data_generator import data_generator_run
 from simulation import simulation_run
 from statistic_generator import statistic_generator_run
@@ -32,8 +32,8 @@ def eucl(args):
 
 def euclidean_d(S, s_obs):
     args = [(s, s_obs) for s in S]
-    with Pool(processes=agents) as pool:
-        results = pool.map(eucl, args, chunk_size*5000)
+    with Pool(processes=distance_agents) as pool:
+        results = pool.map(eucl, args, distance_chunk_size)
     return np.array(results)
 
 # Standardized Euclidean distance using np.mahalanobis
@@ -44,8 +44,8 @@ def s_eucl(args):
 def s_euclidean_d(S, s_obs):
     w = np.diag(np.diag(np.linalg.inv(np.cov(S.T))))
     args = [(s, s_obs, w) for s in S]
-    with Pool(processes=agents) as pool:
-        results = pool.map(s_eucl, args, chunk_size*5000)
+    with Pool(processes=distance_agents) as pool:
+        results = pool.map(s_eucl, args, distance_chunk_size)
     return np.array(results)
 
 # Weighted Euclidean distance 
@@ -60,8 +60,8 @@ def mahalanobis_d(S, s_obs):
     sigma = np.cov(S.T)
     sigma_inv = np.linalg.inv(sigma)
     args = [(s, s_obs, sigma_inv) for s in S]
-    with Pool(processes=agents) as pool:
-        results = pool.map(maha, args, chunk_size*5000)
+    with Pool(processes=distance_agents) as pool:
+        results = pool.map(maha, args, distance_chunk_size)
     return np.array(results)
 
 
@@ -83,8 +83,9 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
 
         distance_measures = {'euclidean': euclidean_d, 's_euclidean': s_euclidean_d, 'mahalanobis': mahalanobis_d}
         statistics_sets = ['mean_variance', 'quantiles', 'min_max', 'mixed']
-        true_posterior = np.load('true_posterior_sample.npy', allow_pickle = True)
-        true_posterior_var = np.array([var for mean, var in true_posterior])
+        t = np.load('true_posterior_sample.npy', allow_pickle = True)
+        true_posterior_var = np.array([var for mean, var in t])
+        del t
 
         # Summary statistics constructed by linear regression
         print('\nComputing ABC posteriors and Wasserstein distances...')
@@ -124,20 +125,19 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                     if triangle_kernel(lr_distance, h) >= np.random.rand():
                         lr_posterior.append((mean, variance))
 
-                posterior_var = np.array([var for mean, var in lr_posterior])
-                w_d = wasserstein_distance(posterior_var, true_posterior_var)
-                distance_dict[statistics_set + '_' + k + '_linear_regression_posterior_distance'].append(w_d)
-                a_r = len(lr_posterior)/(Batch_num * N)
-                acceptance_rate_dict[statistics_set + '_' + k + '_linear_regression_acceptance_rate'].append(a_r)
-
+                lr_posterior_var = np.array([row[1] for row in lr_posterior])
+                lr_w_d = wasserstein_distance(lr_posterior_var, true_posterior_var)
+                distance_dict[statistics_set + '_' + k + '_linear_regression_posterior_distance'].append(lr_w_d)
+                lr_a_r = len(lr_posterior)/(Batch_num * Batch_size)
+                acceptance_rate_dict[statistics_set + '_' + k + '_linear_regression_acceptance_rate'].append(lr_a_r)
 
 
                 np.save('ABC_posteriors/' + statistics_set + '_' + k + '_linear_regression_posterior.npy', np.array(lr_posterior), allow_pickle = True)
 
                 dur_i = time.time() - start_i
                 print('\n' + statistics_set + ' ' + k + ' distance and posterior with linear regression calculation completed in ' + str(dur_i))
-                print('Wasserstein distance to true posterior: ' + str(w_d))
-                print('Accepted: ' + str(len(lr_posterior)/(Batch_num * Sim_per_batch / 100)) + '%')
+                print('Wasserstein distance to true posterior: ' + str(lr_w_d))
+                print('Accepted: ' + str(len(lr_posterior)/(Batch_num * Batch_size / 100)) + '%')
 
 
                 # Raw statistics distance and posterior
@@ -158,7 +158,7 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 posterior_var = np.array([var for mean, var in posterior])
                 w_d = wasserstein_distance(posterior_var, true_posterior_var)
                 distance_dict[statistics_set + '_' + k + '_posterior_distance'].append(w_d)
-                a_r = len(posterior)/(Batch_num * N)
+                a_r = len(posterior)/(Batch_num * Batch_size)
                 acceptance_rate_dict[statistics_set + '_' + k + '_acceptance_rate'].append(a_r)
 
                 np.save('ABC_posteriors/' + statistics_set + '_' + k + '_posterior.npy', np.array(posterior), allow_pickle = True)
@@ -166,7 +166,7 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 dur_i = time.time() - start_i
                 print('\n' + statistics_set + ' ' + k + ' distance and posterior calculation completed in ' + str(dur_i))
                 print('Wasserstein distance to true posterior: ' + str(w_d))
-                print('Accepted: ' + str(len(posterior)/(Batch_num * Sim_per_batch / 100)) + '%')
+                print('Accepted: ' + str(len(posterior)/(Batch_num * Batch_size / 100)) + '%')
 
         dur = time.time() - start
         print('\nRun ' + str(i+1) + ' completed in: ' + str(dur) + '\n\n\n')
