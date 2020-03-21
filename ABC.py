@@ -151,11 +151,13 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 print('\n' + statistics_set + ' ' + k + ' distance and posterior calculation completed in ' + str(dur_i))
                 print('Wasserstein distance to true posterior: ' + str(w_d))
                 print('Accepted: ' + str(a_r / 100) + '%')
+                gc.collect()
 
         np.save('wasserstein_distance_results.npy', distance_results, allow_pickle = True)
         np.save('acceptance_rate_results.npy', acceptance_rate_results, allow_pickle = True)
         dur = time.time() - start
         print('\nRun ' + str(i+1) + ' completed in: ' + str(dur) + '\n\n\n')
+        gc.collect()
 
 
 
