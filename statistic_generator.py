@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.stats import norm, invgamma, wasserstein_distance
 from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
-import matplotlib.pyplot as plt
 import time
 from multiprocessing import Pool
 from constants import M_0, S_SQ_0, N, agents, chunk_size

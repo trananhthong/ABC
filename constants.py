@@ -8,7 +8,7 @@ Alpha = 8 # Prior's alpha
 Beta = 4 # Prior's beta
 
 # Parallel computing settings
-agents = 16
-chunk_size = 62500
-distance_agents = 16
-distance_chunk_size = 62500
+agents = 32
+chunk_size = 31250
+distance_agents = 32
+distance_chunk_size = 31250
