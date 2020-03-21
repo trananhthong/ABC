@@ -70,20 +70,27 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
         print('\nComputing ABC posteriors and Wasserstein distances...')
 
         for statistics_set in statistics_sets:
-            data_parameter_estimate = np.load('parameter_estimates/data_' + statistics_set + '_estimate.npy', allow_pickle = True)
-            sample_estimates = np.load('parameter_estimates/' + statistics_set + '_estimates.npy', allow_pickle = True)
+            a = np.load('parameter_estimates/data_' + statistics_set + '_estimate.npy', allow_pickle = True)
+            data_parameter_estimate = a.copy()
+            del a
+            a = np.load('parameter_estimates/' + statistics_set + '_estimates.npy', allow_pickle = True)
+            sample_estimates = a.copy()
+            del a
             thetas = [(est[0], est[1]) for est in sample_estimates]
             parameter_estimates = np.array([np.array([est[2], est[3]]) for est in sample_estimates])
 
-            data_statistics = np.load('statistics/data_' + statistics_set + '.npy', allow_pickle = True)
-            sample_statistics = np.load('statistics/' + statistics_set + '.npy', allow_pickle = True)
-            sample_statistics = np.array([col2 for col1,col2 in sample_statistics])
+            a = np.load('statistics/data_' + statistics_set + '.npy', allow_pickle = True)
+            data_statistics = a.copy()
+            del a
+            a = np.load('statistics/' + statistics_set + '.npy', allow_pickle = True)
+            sample_statistics = np.array([col2 for col1,col2 in a])
+            del a
 
 
             for k,f in distance_measures.items():
                 
                 # Linear regression distance and posterior
-                start_i = time.process_time()
+                start_i = time.time()
                 lr_distance_est = f(parameter_estimates, data_parameter_estimate).reshape(-1,1)
                 lr_distances = np.hstack((thetas, lr_distance_est))
                 np.save('distances/' + statistics_set + '_' + k + '_lr_distances.npy', lr_distances, allow_pickle = True)
@@ -107,14 +114,14 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
 
                 np.save('ABC_posteriors/' + statistics_set + '_' + k + '_linear_regression_posterior.npy', np.array(lr_posterior), allow_pickle = True)
 
-                dur_i = time.process_time() - start_i
+                dur_i = time.time() - start_i
                 print('\n' + statistics_set + ' ' + k + ' distance and posterior with linear regression calculation completed in ' + str(dur_i))
                 print('Wasserstein distance to true posterior: ' + str(w_d))
                 print('Accepted: ' + str(len(lr_posterior)/(Batch_num * Sim_per_batch / 100)) + '%')
 
 
                 # Raw statistics distance and posterior
-                start_i = time.process_time()
+                start_i = time.time()
                 distance_est = f(sample_statistics, data_statistics).reshape(-1,1)
                 distances = np.hstack((thetas, distance_est))
                 np.save('distances/' + statistics_set + '_' + k + '_distances.npy', distances, allow_pickle = True)
@@ -136,7 +143,7 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
 
                 np.save('ABC_posteriors/' + statistics_set + '_' + k + '_posterior.npy', np.array(posterior), allow_pickle = True)
 
-                dur_i = time.process_time() - start_i
+                dur_i = time.time() - start_i
                 print('\n' + statistics_set + ' ' + k + ' distance and posterior calculation completed in ' + str(dur_i))
                 print('Wasserstein distance to true posterior: ' + str(w_d))
                 print('Accepted: ' + str(len(posterior)/(Batch_num * Sim_per_batch / 100)) + '%')

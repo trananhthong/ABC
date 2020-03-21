@@ -28,13 +28,13 @@ def parameter_regression_run():
 	statistics_sets = ['mean_variance', 'quantiles', 'min_max', 'mixed']
 
 	for statistics_set in statistics_sets:
-		start_i = time.process_time()
+		start_i = time.time()
 		simulations_statistics = np.load('statistics/' + statistics_set + '.npy', allow_pickle=True)
 		data_statistics = np.load('statistics/data_' + statistics_set + '.npy', allow_pickle=True)
 		sample_estimates, data_estimate = parameter_estimate(simulations_statistics, data_statistics)
 		np.save('parameter_estimates/' + statistics_set + '_estimates.npy', sample_estimates, allow_pickle = True)
 		np.save('parameter_estimates/data_' + statistics_set + '_estimate.npy', data_estimate, allow_pickle = True)
-		dur_i = time.process_time() - start_i
+		dur_i = time.time() - start_i
 		print(statistics_set + ' parameter estimation completed in: ' + str(dur_i))
 
 	dur = time.time() - start

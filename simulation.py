@@ -4,7 +4,7 @@ from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import matplotlib.pyplot as plt
 import time
 from multiprocessing import Pool
-from constants import M_0, S_SQ_0, N, Sim_per_batch, Batch_num, agents, chunk_size
+from constants import M_0, S_SQ_0, N, Sim_per_batch, Batch_num, agents, chunk_size, Alpha, Beta
 
 
 # Prior s^2 ~ Scaled-Inv-Chi-sqr(v,s^2)
@@ -35,7 +35,7 @@ def sampling(args):
 # Distributions for sampling
 
 def scaled_inversed_chi_square(repeats):
-    return invgamma.rvs(8, scale = 4, size = repeats)
+    return invgamma.rvs(Alpha, scale = Beta, size = repeats)
 
 def normal(mean, var, repeats):
     return norm.rvs(M_0, np.sqrt(var), size = repeats)
@@ -44,6 +44,7 @@ def simulation_run():
     start = time.time()
     data = np.load('data.npy', allow_pickle = True)
     mean_data = np.mean(data)
+    del data
 
     batches_args = [(mean_data, N, Sim_per_batch, i) for i in np.arange(1, Batch_num + 1)]
 

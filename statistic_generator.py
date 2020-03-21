@@ -12,7 +12,9 @@ from constants import M_0, S_SQ_0, N, Batch_num, agents, chunk_size
 def batch_process(args):
     f, i = args
     batch_summaries = []
-    batch = np.load('simulations/simulations_' + str(i) + '.npy', allow_pickle=True)
+    a = np.load('simulations/simulations_' + str(i) + '.npy', allow_pickle=True)
+    batch = a.copy()
+    del a
 
     for theta, y in batch:
         statistics = np.array(f(y))
@@ -60,7 +62,9 @@ def mixed(data):
 
 def statistic_generator_run():
     start = time.time()
-    data = np.load('data.npy', allow_pickle = True)
+    a = np.load('data.npy', allow_pickle = True)
+    data = a.copy()
+    del a
     choices = {'mean_variance': mean_variance, 'quantiles': quantiles, 'min_max': min_max, 'mixed': mixed}
 
     for k,f in choices.items():
