@@ -4,36 +4,17 @@ from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import matplotlib.pyplot as plt
 import time
 from multiprocessing import Pool
-from constants import M_0, S_SQ_0, N, Batch_num, agents, chunk_size
+from constants import M_0, S_SQ_0, N, agents, chunk_size
 
 
 # Generator for summary statistics
 
-def batch_process(args):
-    f, i = args
-    batch_summaries = []
-    a = np.load('simulations/simulations_' + str(i) + '.npy', allow_pickle=True)
-    batch = a.copy()
-    del a
+def summary_statistics(args):
+    y, f = args
 
-    for theta, y in batch:
-        statistics = np.array(f(y))
-        row = (theta, statistics)
-        batch_summaries.append(row)
+    statistics = np.array(f(y))
 
-    return batch_summaries
-
-def summary_statistics(statistic_choices):
-    summaries = []
-    batch_n = [(statistic_choices, n)  for n in np.arange(1, Batch_num + 1)]
-
-    pool = Pool(processes=agents)
-    results = pool.map(batch_process, batch_n, chunk_size)
-
-    for result in results:
-        summaries = summaries + result
-
-    return np.array(summaries)
+    return np.array(statistics)
 
 
 # Statistics choices
@@ -60,21 +41,30 @@ def mixed(data):
 
 
 
-def statistic_generator_run():
+def statistic_generator_run(data, simulations):
     start = time.time()
-    a = np.load('data.npy', allow_pickle = True)
-    data = a.copy()
-    del a
     choices = {'mean_variance': mean_variance, 'quantiles': quantiles, 'min_max': min_max, 'mixed': mixed}
+    statistics = {}
+    data_statistics = {}
 
     for k,f in choices.items():
         start_i = time.time()
         print('Starting ' + k + ' computation...')
-        stats = summary_statistics(f)
-        np.save('statistics/'+ k + '.npy', stats, allow_pickle=True)
-        np.save('statistics/data_' + k + '.npy', f(data), allow_pickle=True)
+        
+        args = [(y, f) for theta, y in simulations]
+        thetas = [theta for theta, y in simulations]
+        
+        with Pool(processes=agents) as pool:
+            results = pool.map(summary_statistics, args, chunk_size)
+
+        stats = np.vstack([result for result in results])
+        stats = np.hstack((thetas, stats))
+        statistics[k] = stats
+        data_statistics[k] = f(data)
         dur_i = time.time() - start_i
         print(k + ' computation completed in: ' + str(dur_i) + '\n')
 
     dur = time.time() - start
     print('Statistics generating time: ' + str(dur))
+
+    return statistics, data_statistics

@@ -4,7 +4,8 @@ from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import matplotlib.pyplot as plt
 import time
 from multiprocessing import Pool
-from constants import M_0, S_SQ_0, N, Batch_size, Batch_num, Run_num, Cut_off, distance_agents, distance_chunk_size
+import gc
+from constants import M_0, S_SQ_0, N, Run_num, Cut_off, agents, chunk_size, distance_agents, distance_chunk_size
 from data_generator import data_generator_run
 from simulation import simulation_run
 from statistic_generator import statistic_generator_run
@@ -73,39 +74,30 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
         print('RUN ' + str(i + 1) + '\n')
         start = time.time()
         print('\nGenerating data and true posterior...')
-        data_generator_run()
+        data, true_posterior_sample, true_posterior_var_pdf = data_generator_run()
         print('\nGenerating simulation...')
-        simulation_run()
+        simulations = simulation_run(data)
         print('\nGenerating statistics...')
-        statistic_generator_run()
+        stats, data_stats = statistic_generator_run(data, simulations)
         print('\nDoing parameter regression...')
-        parameter_regression_run()
+        simulation_theta_hat, data_theta_hat = parameter_regression_run(stats, data_stats)
 
         distance_measures = {'euclidean': euclidean_d, 's_euclidean': s_euclidean_d, 'mahalanobis': mahalanobis_d}
         statistics_sets = ['mean_variance', 'quantiles', 'min_max', 'mixed']
-        t = np.load('true_posterior_sample.npy', allow_pickle = True)
-        true_posterior_var = np.array([var for mean, var in t])
-        del t
+        true_posterior_var = np.array([var for mean, var in true_posterior_sample])
 
         # Summary statistics constructed by linear regression
         print('\nComputing ABC posteriors and Wasserstein distances...')
 
         for statistics_set in statistics_sets:
-            a = np.load('parameter_estimates/data_' + statistics_set + '_estimate.npy', allow_pickle = True)
-            data_parameter_estimate = a.copy()
-            del a
-            a = np.load('parameter_estimates/' + statistics_set + '_estimates.npy', allow_pickle = True)
-            sample_estimates = a.copy()
-            del a
-            thetas = [(est[0], est[1]) for est in sample_estimates]
-            parameter_estimates = np.array([np.array([est[2], est[3]]) for est in sample_estimates])
+            data_parameter_estimate = data_theta_hat[statistics_set]
+            sample_estimates = simulation_theta_hat[statistics_set]
 
-            a = np.load('statistics/data_' + statistics_set + '.npy', allow_pickle = True)
-            data_statistics = a.copy()
-            del a
-            a = np.load('statistics/' + statistics_set + '.npy', allow_pickle = True)
-            sample_statistics = np.array([col2 for col1,col2 in a])
-            del a
+            thetas = [row[:2] for row in sample_estimates]
+            parameter_estimates = np.array([row[2:] for row in sample_estimates])
+
+            data_statistics = data_stats[statistics_set]
+            sample_statistics = np.array([row[2:] for row in stats[statistics_set]])
 
 
             for k,f in distance_measures.items():
@@ -114,8 +106,6 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 start_i = time.time()
                 lr_distance_est = f(parameter_estimates, data_parameter_estimate).reshape(-1,1)
                 lr_distances = np.hstack((thetas, lr_distance_est))
-                np.save('distances/' + statistics_set + '_' + k + '_lr_distances.npy', lr_distances, allow_pickle = True)
-
 
                 # Set h
                 h = np.quantile(lr_distance_est, cut_off, interpolation='higher')
@@ -128,24 +118,20 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 lr_posterior_var = np.array([row[1] for row in lr_posterior])
                 lr_w_d = wasserstein_distance(lr_posterior_var, true_posterior_var)
                 distance_dict[statistics_set + '_' + k + '_linear_regression_posterior_distance'].append(lr_w_d)
-                lr_a_r = len(lr_posterior)/(Batch_num * Batch_size)
+                lr_a_r = len(lr_posterior)/(agents * chunk_size)
                 acceptance_rate_dict[statistics_set + '_' + k + '_linear_regression_acceptance_rate'].append(lr_a_r)
 
-
-                np.save('ABC_posteriors/' + statistics_set + '_' + k + '_linear_regression_posterior.npy', np.array(lr_posterior), allow_pickle = True)
 
                 dur_i = time.time() - start_i
                 print('\n' + statistics_set + ' ' + k + ' distance and posterior with linear regression calculation completed in ' + str(dur_i))
                 print('Wasserstein distance to true posterior: ' + str(lr_w_d))
-                print('Accepted: ' + str(len(lr_posterior)/(Batch_num * Batch_size / 100)) + '%')
+                print('Accepted: ' + str(lr_a_r * 100) + '%')
 
 
                 # Raw statistics distance and posterior
                 start_i = time.time()
                 distance_est = f(sample_statistics, data_statistics).reshape(-1,1)
                 distances = np.hstack((thetas, distance_est))
-                np.save('distances/' + statistics_set + '_' + k + '_distances.npy', distances, allow_pickle = True)
-
 
                 # Set h
                 h = np.quantile(distance_est, cut_off, interpolation='higher')
@@ -158,16 +144,16 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 posterior_var = np.array([var for mean, var in posterior])
                 w_d = wasserstein_distance(posterior_var, true_posterior_var)
                 distance_dict[statistics_set + '_' + k + '_posterior_distance'].append(w_d)
-                a_r = len(posterior)/(Batch_num * Batch_size)
+                a_r = len(posterior)/(agents * chunk_size)
                 acceptance_rate_dict[statistics_set + '_' + k + '_acceptance_rate'].append(a_r)
-
-                np.save('ABC_posteriors/' + statistics_set + '_' + k + '_posterior.npy', np.array(posterior), allow_pickle = True)
 
                 dur_i = time.time() - start_i
                 print('\n' + statistics_set + ' ' + k + ' distance and posterior calculation completed in ' + str(dur_i))
                 print('Wasserstein distance to true posterior: ' + str(w_d))
-                print('Accepted: ' + str(len(posterior)/(Batch_num * Batch_size / 100)) + '%')
+                print('Accepted: ' + str(a_r / 100) + '%')
 
+        np.save('wasserstein_distance_results.npy', distance_results, allow_pickle = True)
+        np.save('acceptance_rate_results.npy', acceptance_rate_results, allow_pickle = True)
         dur = time.time() - start
         print('\nRun ' + str(i+1) + ' completed in: ' + str(dur) + '\n\n\n')
 
@@ -192,8 +178,6 @@ if __name__ == '__main__':
 
     start1 = time.time()
     ABC(distance_results, acceptance_rate_results, Cut_off, Run_num)
-    np.save('wasserstein_distance_results.npy', distance_results, allow_pickle = True)
-    np.save('acceptance_rate_results.npy', acceptance_rate_results, allow_pickle = True)
     dur1 = time.time() - start1
-    print('All ' + str(Run_num) + ' ABC run completed in: ' + str(dur1))
+    print('All ' + str(Run_num) + ' ABC runs completed in: ' + str(dur1))
 
