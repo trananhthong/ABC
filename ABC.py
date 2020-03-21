@@ -3,7 +3,8 @@ from scipy.stats import norm, invgamma, wasserstein_distance
 from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import matplotlib.pyplot as plt
 import time
-from constants import M_0, S_SQ_0, N, Sim_per_batch, Batch_num, Run_num, Cut_off
+from multiprocessing import Pool
+from constants import M_0, S_SQ_0, N, Sim_per_batch, Batch_num, Run_num, Cut_off, agents, chunk_size
 from data_generator import data_generator_run
 from simulation import simulation_run
 from statistic_generator import statistic_generator_run
@@ -25,24 +26,43 @@ def triangle_kernel(u, h):
 # Distance measures euclidean (weighted and non weighted), mahalanobis
 
 # Euclidean distance
+def eucl(args):
+    s, s_obs = args
+    return euclidean(s, s_obs)
+
 def euclidean_d(S, s_obs):
-    return np.array([euclidean(s, s_obs) for s in S])
+    args = [(s, s_obs) for s in S]
+    with Pool(processes=agents) as pool:
+        results = pool.map(eucl, args, chunk_size*5000)
+    return np.array(results)
 
 # Standardized Euclidean distance using np.mahalanobis
+def s_eucl(args):
+    s, s_obs, w = args
+    return mahalanobis(s, s_obs, w)
+
 def s_euclidean_d(S, s_obs):
-    #w = [1/np.var(s) for s in S.T]
     w = np.diag(np.diag(np.linalg.inv(np.cov(S.T))))
-    return np.array([mahalanobis(s, s_obs, w) for s in S])
+    args = [(s, s_obs, w) for s in S]
+    with Pool(processes=agents) as pool:
+        results = pool.map(s_eucl, args, chunk_size*5000)
+    return np.array(results)
 
 # Weighted Euclidean distance 
 def w_euclidean_d(S, s_obs, w):
     return np.array([euclidean(s, s_obs, w) for s in S])
 
+def maha(args):
+    s, s_obs, sigma_inv = args
+    return mahalanobis(s, s_obs, sigma_inv)
 
 def mahalanobis_d(S, s_obs):
     sigma = np.cov(S.T)
     sigma_inv = np.linalg.inv(sigma)
-    return np.array([mahalanobis(s, s_obs, sigma_inv) for s in S])
+    args = [(s, s_obs, sigma_inv) for s in S]
+    with Pool(processes=agents) as pool:
+        results = pool.map(maha, args, chunk_size*5000)
+    return np.array(results)
 
 
 
