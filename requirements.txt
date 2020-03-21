@@ -91,7 +91,7 @@ pathlib==1.0.1
 patsy==0.5.1
 pexpect==4.2.1
 pickleshare==0.7.5
-Pillow==5.1.0
+Pillow==6.2.0
 plotly==4.2.1
 pluggy==0.13.0
 pprint==0.1
