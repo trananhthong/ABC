@@ -7,10 +7,10 @@ Cut_off = 0.003 # Cut_off quantile for rejection
 Alpha = 8 # Prior's alpha
 Beta = 4 # Prior's beta
 Batch_size = 10000
-Batch_num = 100
+Batch_num = 4
 
 # Parallel computing settings
-agents = 32
-chunk_size = 3
-distance_agents = 32
-distance_chunk_size = 3
+agents = 2
+chunk_size = 2
+distance_agents = 2
+distance_chunk_size = 2

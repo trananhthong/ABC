@@ -4,7 +4,7 @@ from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import time
 from multiprocessing import Pool
 import gc
-from constants import M_0, S_SQ_0, N, Run_num, Cut_off, agents, chunk_size, distance_agents, distance_chunk_size, Batch_size
+from constants import M_0, S_SQ_0, N, Run_num, Cut_off, agents, chunk_size, distance_agents, distance_chunk_size, Batch_size, Batch_num
 from data_generator import data_generator_run
 from simulation import simulation_run
 from statistic_generator import statistic_generator_run
@@ -31,7 +31,8 @@ def eucl(args):
     return np.array([euclidean(s, s_obs) for s in S])
 
 def euclidean_d(S, s_obs):
-    args = np.array_split(np.array([(s, s_obs) for s in S]), Batch_size)
+    s_batch = np.array_split(np.array(S), Batch_size)
+    args = [(s, s_obs) for s in s_batch]
     with Pool(processes=distance_agents) as pool:
         results = pool.map(eucl, args, distance_chunk_size)
     return np.concatenate(results)
@@ -43,7 +44,8 @@ def s_eucl(args):
 
 def s_euclidean_d(S, s_obs):
     w = np.diag(np.diag(np.linalg.inv(np.cov(S.T))))
-    args = np.array_split(np.array([(s, s_obs, w) for s in S]), Batch_size)
+    s_batch = np.array_split(np.array(S), Batch_size)
+    args = [(s, s_obs, w) for s in s_batch]
     with Pool(processes=distance_agents) as pool:
         results = pool.map(s_eucl, args, distance_chunk_size)
     return np.concatenate(results)
@@ -59,7 +61,8 @@ def maha(args):
 def mahalanobis_d(S, s_obs):
     sigma = np.cov(S.T)
     sigma_inv = np.linalg.inv(sigma)
-    args = np.array_split(np.array([(s, s_obs, sigma_inv) for s in S]), Batch_size)
+    s_batch = np.array_split(np.array(S), Batch_size)
+    args = [(s, s_obs, sigma_inv) for s in s_batch]
     with Pool(processes=distance_agents) as pool:
         results = pool.map(maha, args, distance_chunk_size)
     return np.concatenate(results)
@@ -117,7 +120,7 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 lr_posterior_var = np.array([row[1] for row in lr_posterior])
                 lr_w_d = wasserstein_distance(lr_posterior_var, true_posterior_var)
                 distance_dict[statistics_set + '_' + k + '_linear_regression_posterior_distance'].append(lr_w_d)
-                lr_a_r = len(lr_posterior)/(agents * chunk_size)
+                lr_a_r = len(lr_posterior)/(Batch_size * Batch_num)
                 acceptance_rate_dict[statistics_set + '_' + k + '_linear_regression_acceptance_rate'].append(lr_a_r)
 
 
@@ -143,7 +146,7 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
                 posterior_var = np.array([var for mean, var in posterior])
                 w_d = wasserstein_distance(posterior_var, true_posterior_var)
                 distance_dict[statistics_set + '_' + k + '_posterior_distance'].append(w_d)
-                a_r = len(posterior)/(agents * chunk_size)
+                a_r = len(posterior)/(Batch_size * Batch_num)
                 acceptance_rate_dict[statistics_set + '_' + k + '_acceptance_rate'].append(a_r)
 
                 dur_i = time.time() - start_i

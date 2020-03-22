@@ -50,7 +50,8 @@ def statistic_generator_run(data, simulations):
         start_i = time.time()
         print('Starting ' + k + ' computation...')
         
-        args = np.array_split(np.array([(y, f) for theta, y in simulations]), Batch_size)
+        y_batch = np.array_split(np.array([y for theta, y in simulations]), Batch_size)
+        args = [(y,f) for y in y_batch]
         thetas = np.array([theta for theta, y in simulations])
         
         with Pool(processes=agents) as pool:
