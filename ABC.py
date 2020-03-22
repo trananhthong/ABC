@@ -178,15 +178,15 @@ def ABC(distance_dict, acceptance_rate_dict, cut_off, runs):
 
 def ABC_par(args):
     distance_dict, acceptance_rate_dict, cut_off, run = args
-    print('RUN ' + str(run + 1) + ' started...\n')
+    print('\nRUN ' + str(run+1) + ' started...\n')
     start = time.time()
-    #print('\nGenerating data and true posterior...')
+    print('\nRun' + str(run+1) + ': Generating data and true posterior...\n')
     data, true_posterior_sample, true_posterior_var_pdf = data_generator_run()
-    #print('\nGenerating simulation...')
+    print('\nRun' + str(run+1) + ': Generating simulation...\n')
     simulations = simulation_run(data)
-    #print('\nGenerating statistics...')
+    print('\nRun' + str(run+1) + ': Generating statistics...\n')
     stats, data_stats = statistic_generator_run(data, simulations)
-    #print('\nDoing parameter regression...')
+    print('\nRun' + str(run+1) + ': Doing parameter regression...\n')
     simulation_theta_hat, data_theta_hat = parameter_regression_run(stats, data_stats)
 
     distance_measures = {'euclidean': euclidean_d, 's_euclidean': s_euclidean_d, 'mahalanobis': mahalanobis_d}
@@ -194,7 +194,7 @@ def ABC_par(args):
     true_posterior_var = np.array([var for mean, var in true_posterior_sample])
 
     # Summary statistics constructed by linear regression
-    #print('\nComputing ABC posteriors and Wasserstein distances...')
+    print('\nRun' + str(run+1) + ': Computing ABC posteriors and Wasserstein distances...\n')
 
     for statistics_set in statistics_sets:
         data_parameter_estimate = data_theta_hat[statistics_set]
@@ -260,8 +260,8 @@ def ABC_par(args):
             #print('Accepted: ' + str(a_r * 100) + '%')
             gc.collect()
 
-    np.save('results/wasserstein_distance_results' + str(run + 1) + '.npy', distance_results, allow_pickle = True)
-    np.save('results/acceptance_rate_results' + str(run + 1) + '.npy', acceptance_rate_results, allow_pickle = True)
+    np.save('results/wasserstein_distance_results' + str(run+1) + '.npy', distance_results, allow_pickle = True)
+    np.save('results/acceptance_rate_results' + str(run+1) + '.npy', acceptance_rate_results, allow_pickle = True)
     dur = time.time() - start
     print('\nRun ' + str(run+1) + ' completed in: ' + str(dur) + '\n\n\n')
     gc.collect()
