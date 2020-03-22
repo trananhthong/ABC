@@ -37,9 +37,9 @@ def parameter_regression_run(stats, data_stats):
 		data_theta_hat[statistics_set] = reg.predict([data_statistics])[0]
 
 		dur_i = time.time() - start_i
-		print(statistics_set + ' parameter estimation completed in: ' + str(dur_i))
+		#print(statistics_set + ' parameter estimation completed in: ' + str(dur_i))
 
 	dur = time.time() - start
-	print('Parameter estimation time: ' + str(dur))
+	#print('Parameter estimation time: ' + str(dur))
 
 	return simulation_theta_hat, data_theta_hat

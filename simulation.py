@@ -17,8 +17,19 @@ def prior(v, s_sq, n):
 
 # Sampling
 
-def sampling(args):
+def sampling_par(args):
     sample_mean, sample_size, repeats = args
+    simulations = []
+    variances = scaled_inversed_chi_square(repeats)
+    for variance in variances:
+        mean = normal(sample_mean, np.sqrt(variance/sample_size), 1)[0]
+        y = normal(mean, np.sqrt(variance), sample_size)
+        theta = np.array([mean, variance])
+        simulations.append((theta, y))
+
+    return np.array(simulations)
+
+def sampling(sample_mean, sample_size, repeats):
     simulations = []
     variances = scaled_inversed_chi_square(repeats)
     for variance in variances:
@@ -39,14 +50,30 @@ def scaled_inversed_chi_square(repeats):
 def normal(mean, var, repeats):
     return norm.rvs(M_0, np.sqrt(var), size = repeats)
 
-def simulation_run(data):
+def simulation_run_par(data):
     start = time.time()
     mean_data = np.mean(data)
 
     batches_args = [(mean_data, N, Batch_size) for i in np.arange(1, Batch_num + 1)]
 
     with Pool(processes=agents) as pool:
-        results = pool.map(sampling, batches_args, chunk_size)
+        results = pool.map(sampling_par, batches_args, chunk_size)
+
+    simulations = np.concatenate([result for result in results])
+
+    dur = time.time() - start
+    print('Simulation time: ' + str(dur))
+
+    return simulations
+
+def simulation_run(data):
+    start = time.time()
+    mean_data = np.mean(data)
+
+    results = []
+
+    for i in range(Batch_num):
+        results.append(sampling(mean_data, N, Batch_num * Batch_size))
 
     simulations = np.concatenate([result for result in results])
 

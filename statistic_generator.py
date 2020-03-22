@@ -8,10 +8,15 @@ from constants import M_0, S_SQ_0, N, agents, chunk_size, Batch_num, Batch_size
 
 # Generator for summary statistics
 
-def summary_statistics(args):
-    ys, f = args
+def summary_statistics_par(args):
+    Y, f = args
 
-    statistics = np.array([f(y) for y in ys])
+    statistics = np.array([f(y) for y in Y])
+
+    return statistics
+
+def summary_statistics(Y, f):
+    statistics = np.array([f(y) for y in Y])
 
     return statistics
 
@@ -40,7 +45,7 @@ def mixed(data):
 
 
 
-def statistic_generator_run(data, simulations):
+def statistic_generator_run_par(data, simulations):
     start = time.time()
     choices = {'mean_variance': mean_variance, 'quantiles': quantiles, 'min_max': min_max, 'mixed': mixed}
     statistics = {}
@@ -55,7 +60,7 @@ def statistic_generator_run(data, simulations):
         thetas = np.array([theta for theta, y in simulations])
         
         with Pool(processes=agents) as pool:
-            results = pool.map(summary_statistics, args, chunk_size)
+            results = pool.map(summary_statistics_par, args, chunk_size)
 
         stats = np.vstack([result for result in results])
         stats = np.hstack((thetas, stats))
@@ -66,5 +71,35 @@ def statistic_generator_run(data, simulations):
 
     dur = time.time() - start
     print('Statistics generating time: ' + str(dur))
+
+    return statistics, data_statistics
+
+
+def statistic_generator_run(data, simulations):
+    start = time.time()
+    choices = {'mean_variance': mean_variance, 'quantiles': quantiles, 'min_max': min_max, 'mixed': mixed}
+    statistics = {}
+    data_statistics = {}
+
+    for k,f in choices.items():
+        start_i = time.time()
+        # print('Starting ' + k + ' computation...')
+        
+        y_batch = np.array_split(np.array([y for theta, y in simulations]), Batch_size)
+        thetas = np.array([theta for theta, y in simulations])
+        results = []
+
+        for y in y_batch:
+            results.append(summary_statistics(y, f))
+
+        stats = np.vstack([result for result in results])
+        stats = np.hstack((thetas, stats))
+        statistics[k] = stats
+        data_statistics[k] = f(data)
+        dur_i = time.time() - start_i
+        # print(k + ' computation completed in: ' + str(dur_i) + '\n')
+
+    dur = time.time() - start
+    # print('Statistics generating time: ' + str(dur))
 
     return statistics, data_statistics
