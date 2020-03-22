@@ -3,7 +3,7 @@ from scipy.stats import norm, invgamma, wasserstein_distance
 from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import time
 from multiprocessing import Pool
-from constants import M_0, S_SQ_0, N, agents, chunk_size, Alpha, Beta
+from constants import M_0, S_SQ_0, N, agents, chunk_size, Alpha, Beta, Batch_size, Batch_num
 
 
 # Prior s^2 ~ Scaled-Inv-Chi-sqr(v,s^2)
@@ -43,10 +43,10 @@ def simulation_run(data):
     start = time.time()
     mean_data = np.mean(data)
 
-    batches_args = [(mean_data, N, chunk_size) for i in np.arange(1, agents + 1)]
+    batches_args = [(mean_data, N, batch_size) for i in np.arange(1, Batch_num + 1)]
 
-    with Pool(processes=agents) as pool:
-        results = pool.map(sampling, batches_args)
+    with Pool(processes=50) as pool:
+        results = pool.map(sampling, batches_args, 2)
 
     simulations = np.concatenate([result for result in results])
 
