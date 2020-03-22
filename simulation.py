@@ -43,7 +43,7 @@ def simulation_run(data):
     start = time.time()
     mean_data = np.mean(data)
 
-    batches_args = [(mean_data, N, batch_size) for i in np.arange(1, Batch_num + 1)]
+    batches_args = [(mean_data, N, Batch_size) for i in np.arange(1, Batch_num + 1)]
 
     with Pool(processes=50) as pool:
         results = pool.map(sampling, batches_args, 2)
