@@ -46,7 +46,7 @@ def simulation_run(data):
     batches_args = [(mean_data, N, chunk_size) for i in np.arange(1, agents + 1)]
 
     with Pool(processes=agents) as pool:
-        results = pool.map(sampling, batches_args, chunk_size)
+        results = pool.map(sampling, batches_args)
 
     simulations = np.concatenate([result for result in results])
 
