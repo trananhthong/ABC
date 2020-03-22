@@ -11,6 +11,6 @@ Batch_num = 100
 
 # Parallel computing settings
 agents = 32
-chunk_size = 31250
-distance_agents = 10
-distance_chunk_size = 100000
+chunk_size = 3
+distance_agents = 32
+distance_chunk_size = 3

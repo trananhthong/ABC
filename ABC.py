@@ -4,7 +4,7 @@ from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import time
 from multiprocessing import Pool
 import gc
-from constants import M_0, S_SQ_0, N, Run_num, Cut_off, agents, chunk_size, distance_agents, distance_chunk_size
+from constants import M_0, S_SQ_0, N, Run_num, Cut_off, agents, chunk_size, distance_agents, distance_chunk_size, Batch_size
 from data_generator import data_generator_run
 from simulation import simulation_run
 from statistic_generator import statistic_generator_run
@@ -27,42 +27,42 @@ def triangle_kernel(u, h):
 
 # Euclidean distance
 def eucl(args):
-    s, s_obs = args
-    return euclidean(s, s_obs)
+    S, s_obs = args
+    return np.array([euclidean(s, s_obs) for s in S])
 
 def euclidean_d(S, s_obs):
-    args = [(s, s_obs) for s in S]
+    args = np.array_split(np.array([(s, s_obs) for s in S]), Batch_size)
     with Pool(processes=distance_agents) as pool:
         results = pool.map(eucl, args, distance_chunk_size)
-    return np.array(results)
+    return np.concatenate(results)
 
 # Standardized Euclidean distance using np.mahalanobis
 def s_eucl(args):
-    s, s_obs, w = args
-    return mahalanobis(s, s_obs, w)
+    S, s_obs, w = args
+    return np.array([mahalanobis(s, s_obs, w) for s in S])
 
 def s_euclidean_d(S, s_obs):
     w = np.diag(np.diag(np.linalg.inv(np.cov(S.T))))
-    args = [(s, s_obs, w) for s in S]
+    args = np.array_split(np.array([(s, s_obs, w) for s in S]), Batch_size)
     with Pool(processes=distance_agents) as pool:
         results = pool.map(s_eucl, args, distance_chunk_size)
-    return np.array(results)
+    return np.concatenate(results)
 
 # Weighted Euclidean distance 
 def w_euclidean_d(S, s_obs, w):
     return np.array([euclidean(s, s_obs, w) for s in S])
 
 def maha(args):
-    s, s_obs, sigma_inv = args
-    return mahalanobis(s, s_obs, sigma_inv)
+    S, s_obs, sigma_inv = args
+    return np.array([mahalanobis(s, s_obs, sigma_inv) for s in S])
 
 def mahalanobis_d(S, s_obs):
     sigma = np.cov(S.T)
     sigma_inv = np.linalg.inv(sigma)
-    args = [(s, s_obs, sigma_inv) for s in S]
+    args = np.array_split(np.array([(s, s_obs, sigma_inv) for s in S]), Batch_size)
     with Pool(processes=distance_agents) as pool:
         results = pool.map(maha, args, distance_chunk_size)
-    return np.array(results)
+    return np.concatenate(results)
 
 
 

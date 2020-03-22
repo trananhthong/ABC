@@ -3,17 +3,17 @@ from scipy.stats import norm, invgamma, wasserstein_distance
 from scipy.spatial.distance import euclidean, seuclidean, mahalanobis
 import time
 from multiprocessing import Pool
-from constants import M_0, S_SQ_0, N, agents, chunk_size
+from constants import M_0, S_SQ_0, N, agents, chunk_size, Batch_num, Batch_size
 
 
 # Generator for summary statistics
 
 def summary_statistics(args):
-    y, f = args
+    ys, f = args
 
-    statistics = np.array(f(y))
+    statistics = np.array([f(y) for y in ys])
 
-    return np.array(statistics)
+    return statistics
 
 
 # Statistics choices
@@ -50,8 +50,8 @@ def statistic_generator_run(data, simulations):
         start_i = time.time()
         print('Starting ' + k + ' computation...')
         
-        args = [(y, f) for theta, y in simulations]
-        thetas = [theta for theta, y in simulations]
+        args = np.array_split(np.array([(y, f) for theta, y in simulations]), Batch_size)
+        thetas = np.array([theta for theta, y in simulations])
         
         with Pool(processes=agents) as pool:
             results = pool.map(summary_statistics, args, chunk_size)
